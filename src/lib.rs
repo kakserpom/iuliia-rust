@@ -6,7 +6,7 @@ use include_dir::Dir;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::iter::once;
 
@@ -14,7 +14,7 @@ const SCHEMA_DIR: Dir = include_dir!("./iuliia");
 const DUMMY_SYMBOL: &str = "$";
 
 /// Describe struct of transliterate schema
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Schema {
     name: String,
     description: String,
@@ -31,8 +31,9 @@ impl Schema {
     pub fn for_name(s: &str) -> Schema {
         let schema_file = SCHEMA_DIR
             .get_file(format!("{}{}", s, ".json"))
-            .expect(&format!("There are no schema with name {}", s));
-        serde_json::from_str(schema_file.contents_utf8().unwrap()).unwrap()
+            .unwrap_or_else(|| panic!("There are no schema with name {}", s));
+        serde_json::from_str(schema_file.contents_utf8().expect("contents_utf8() failed"))
+            .expect("Schema deserialization error")
     }
 
     pub fn get_pref(&self, s: &str) -> Option<&String> {
@@ -68,7 +69,7 @@ impl Schema {
 ///
 pub fn parse_by_schema_name(s: &str, schema_name: &str) -> String {
     let schema = Schema::for_name(schema_name);
-    parse_by_schema(&s, &schema)
+    parse_by_schema(s, &schema)
 }
 
 /// Transliterate a slice of str using `Schema` to `String`
@@ -86,14 +87,14 @@ pub fn parse_by_schema_name(s: &str, schema_name: &str) -> String {
 ///
 pub fn parse_by_schema(s: &str, schema: &Schema) -> String {
     lazy_static! {
-        static ref RE: Regex = Regex::new(r"\b").unwrap();
+        static ref RE: Regex = Regex::new(r"\b").expect("Failed to compile regex");
     }
     RE.split(s)
         .map(|word| parse_word_by_schema(word, schema))
         .collect()
 }
 
-fn parse_word_by_schema(s: &str, schema: &Schema) -> String {
+pub fn parse_word_by_schema(s: &str, schema: &Schema) -> String {
     let word_by_letters: Vec<String> = s.chars().map(|char| char.to_string()).collect::<Vec<_>>();
     //Parse ending
     let ending = parse_ending(&word_by_letters, schema);
@@ -118,22 +119,22 @@ fn parse_word_by_schema(s: &str, schema: &Schema) -> String {
         .collect::<String>()
 }
 
-fn parse_ending(s: &Vec<String>, schema: &Schema) -> Option<Ending> {
+fn parse_ending(s: &[String], schema: &Schema) -> Option<Ending> {
     let length = s.len();
     if length < 3 {
         None
     } else if let Some(matched) = schema.get_ending(&s[length - 1..].concat()) {
         Some(Ending {
-            translate: propagate_case_from_source(&matched, &s[length - 1..].concat(), false),
+            translate: propagate_case_from_source(matched, &s[length - 1..].concat(), false),
             ending_start: length - 1,
         })
-    } else if let Some(matched) = schema.get_ending(&s[length - 2..].concat()) {
-        Some(Ending {
-            translate: propagate_case_from_source(&matched, &s[length - 2..].concat(), false),
-            ending_start: length - 2,
-        })
     } else {
-        None
+        schema
+            .get_ending(&s[length - 2..].concat())
+            .map(|matched| Ending {
+                translate: propagate_case_from_source(matched, &s[length - 2..].concat(), false),
+                ending_start: length - 2,
+            })
     }
 }
 
@@ -148,15 +149,16 @@ struct Ending {
 /// 3. letter parse
 /// 4. use input letter
 fn parse_letter(letter_with_neighbors: &[String], schema: &Schema) -> String {
-    let prefix: String = letter_with_neighbors[..2].concat();
-    let postfix: String = letter_with_neighbors[1..].concat();
     let letter: String = letter_with_neighbors[1..2].concat();
-    let result = schema
-        .get_pref(&prefix)
-        .or_else(|| schema.get_next(&postfix))
-        .or_else(|| schema.get_letter(&letter))
-        .unwrap_or(&letter);
-    propagate_case_from_source(result, &letter, true)
+    propagate_case_from_source(
+        schema
+            .get_pref(&letter_with_neighbors[..2].concat())
+            .or_else(|| schema.get_next(&letter_with_neighbors[1..].concat()))
+            .or_else(|| schema.get_letter(&letter))
+            .unwrap_or(&letter),
+        &letter,
+        true,
+    )
 }
 
 fn propagate_case_from_source(
@@ -165,13 +167,9 @@ fn propagate_case_from_source(
     only_first_symbol: bool,
 ) -> String {
     // Determinate case of letter
-    let letter_upper = source_letter.chars().any(|letter| letter.is_uppercase());
-
-    if !letter_upper {
-        return result.to_owned();
-    }
-
-    if only_first_symbol {
+    if !source_letter.chars().any(|letter| letter.is_uppercase()) {
+        result.to_owned()
+    } else if only_first_symbol {
         let mut c = result.chars();
         if let Some(f) = c.next() {
             f.to_uppercase().collect::<String>() + c.as_str()
