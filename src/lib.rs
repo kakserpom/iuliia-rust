@@ -42,26 +42,24 @@ impl Schema {
 
     pub fn get_pref(&self, s: &str) -> Option<&String> {
         self.prev_mapping
-            .as_ref()
-            .and_then(|x| x.get(&s.replace(DUMMY_SYMBOL, "").to_lowercase()))
+            .as_ref()?
+            .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
     }
 
     pub fn get_next(&self, s: &str) -> Option<&String> {
         self.next_mapping
-            .as_ref()
-            .and_then(|x| x.get(&s.replace(DUMMY_SYMBOL, "").to_lowercase()))
+            .as_ref()?
+            .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
     }
 
     pub fn get_letter(&self, s: &str) -> Option<&String> {
         self.mapping
-            .as_ref()
-            .and_then(|x| x.get(&s.replace(DUMMY_SYMBOL, "").to_lowercase()))
+            .as_ref()?
+            .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
     }
 
     pub fn get_ending(&self, s: &str) -> Option<&String> {
-        self.ending_mapping
-            .as_ref()
-            .and_then(|x| x.get(&s.to_lowercase()))
+        self.ending_mapping.as_ref()?.get(&s.to_lowercase())
     }
 }
 
