@@ -6,7 +6,7 @@ use include_dir::Dir;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use serde::Deserialize;
+pub use serde::Deserialize;
 use std::collections::HashMap;
 use std::iter::once;
 
@@ -16,13 +16,17 @@ const DUMMY_SYMBOL: &str = "$";
 /// Describe struct of transliterate schema
 #[derive(Deserialize, Debug)]
 pub struct Schema {
+    #[cfg(test)]
     name: String,
+    #[cfg(test)]
     description: String,
+    #[cfg(test)]
     url: String,
     mapping: Option<HashMap<String, String>>,
     prev_mapping: Option<HashMap<String, String>>,
     next_mapping: Option<HashMap<String, String>>,
     ending_mapping: Option<HashMap<String, String>>,
+    #[cfg(test)]
     samples: Option<Vec<Vec<String>>>,
 }
 
