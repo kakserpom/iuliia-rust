@@ -193,106 +193,57 @@ mod tests {
 
     #[test]
     fn simple_word_test() {
-        //Given
-        let test_words = vec!["б", "пол"];
-        let expected_words = vec!["b", "pol"];
         let schema = Schema::for_name("wikipedia");
-
-        //When
-        let transliterated_words: Vec<String> = test_words
-            .iter()
-            .map(|word| parse_by_schema(&word, &schema))
-            .collect();
-
-        //Then
-        assert_eq!(transliterated_words, expected_words)
+        for (original, expected) in [("б", "b"), ("пол", "pol")] {
+            assert_eq!(parse_by_schema(&original, &schema), expected);
+        }
     }
 
     #[test]
     fn prefix_word_test() {
-        //Given
-        let test_words = vec!["ель"];
-        let expected_words = vec!["yel"];
         let schema = Schema::for_name("wikipedia");
-
-        //When
-        let transliterated_words: Vec<String> = test_words
-            .iter()
-            .map(|word| parse_by_schema(&word, &schema))
-            .collect();
-
-        //Then
-        assert_eq!(transliterated_words, expected_words)
+        for (original, expected) in [("ель", "yel")] {
+            assert_eq!(parse_by_schema(&original, &schema), expected);
+        }
     }
 
     #[test]
     fn postfix_word_test() {
-        //Given
-        let test_words = vec!["бульон"];
-        let expected_words = vec!["bulyon"];
         let schema = Schema::for_name("wikipedia");
-
-        //When
-        let transliterated_words: Vec<String> = test_words
-            .iter()
-            .map(|word| parse_by_schema(&word, &schema))
-            .collect();
-
-        //Then
-        assert_eq!(transliterated_words, expected_words)
+        for (original, expected) in [("бульон", "bulyon")] {
+            assert_eq!(parse_by_schema(&original, &schema), expected);
+        }
     }
 
     #[test]
     fn test_letter_case() {
-        //Given
-        let test_words = vec!["ноГа", "Рука"];
-        let expected_words = vec!["noGa", "Ruka"];
         let schema = Schema::for_name("wikipedia");
-
-        //When
-        let transliterated_words: Vec<String> = test_words
-            .iter()
-            .map(|word| parse_by_schema(&word, &schema))
-            .collect();
-
-        //Then
-        assert_eq!(transliterated_words, expected_words)
+        for (original, expected) in [("ноГа", "noGa"), ("Рука", "Ruka")] {
+            assert_eq!(parse_by_schema(&original, &schema), expected);
+        }
     }
 
     #[test]
     fn test_ending() {
-        //Given
-        let test_words = vec!["хороший"];
-        let expected_words = vec!["khoroshy"];
         let schema = Schema::for_name("wikipedia");
-
-        //When
-        let transliterated_words: Vec<String> = test_words
-            .iter()
-            .map(|word| parse_by_schema(&word, &schema))
-            .collect();
-
-        //Then
-        assert_eq!(transliterated_words, expected_words)
+        for (original, expected) in [("хороший", "khoroshy")] {
+            assert_eq!(parse_by_schema(&original, &schema), expected);
+        }
     }
 
     #[test]
     fn test_sentence() {
-        //Given
-        let test_words = vec![
-            "Юлия, съешь ещё этих мягких французских булок из Йошкар-Олы, да выпей алтайского чаю",
-            "ВЕЛИКИЙ",
-        ];
-        let expected_words = vec!["Yuliya, syesh yeshchyo etikh myagkikh frantsuzskikh bulok iz Yoshkar-Oly, da vypey altayskogo chayu", "VELIKY"];
         let schema = Schema::for_name("wikipedia");
-
-        //When
-        let transliterated_words: Vec<String> = test_words
-            .iter()
-            .map(|word| parse_by_schema(&word, &schema))
-            .collect();
-
-        //Then
-        assert_eq!(transliterated_words, expected_words)
+        for (original, expected) in [
+            (
+                "Юлия, съешь ещё этих мягких французских булок из Йошкар-Олы, да выпей алтайского чаю",
+                "Yuliya, syesh yeshchyo etikh myagkikh frantsuzskikh bulok iz Yoshkar-Oly, da vypey altayskogo chayu"),
+            (
+                "ВЕЛИКИЙ",
+                "VELIKY"
+            ),
+        ] {
+            assert_eq!(parse_by_schema(&original, &schema), expected);
+        }
     }
 }
