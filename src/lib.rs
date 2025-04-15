@@ -197,7 +197,7 @@ mod tests {
     fn simple_word_test() {
         let schema = Schema::for_name("wikipedia");
         for (original, expected) in [("б", "b"), ("пол", "pol")] {
-            assert_eq!(parse_by_schema(&original, &schema), expected);
+            assert_eq!(parse_by_schema(original, &schema), expected);
         }
     }
 
@@ -205,7 +205,7 @@ mod tests {
     fn prefix_word_test() {
         let schema = Schema::for_name("wikipedia");
         for (original, expected) in [("ель", "yel")] {
-            assert_eq!(parse_by_schema(&original, &schema), expected);
+            assert_eq!(parse_by_schema(original, &schema), expected);
         }
     }
 
@@ -213,7 +213,7 @@ mod tests {
     fn postfix_word_test() {
         let schema = Schema::for_name("wikipedia");
         for (original, expected) in [("бульон", "bulyon")] {
-            assert_eq!(parse_by_schema(&original, &schema), expected);
+            assert_eq!(parse_by_schema(original, &schema), expected);
         }
     }
 
@@ -221,7 +221,7 @@ mod tests {
     fn test_letter_case() {
         let schema = Schema::for_name("wikipedia");
         for (original, expected) in [("ноГа", "noGa"), ("Рука", "Ruka")] {
-            assert_eq!(parse_by_schema(&original, &schema), expected);
+            assert_eq!(parse_by_schema(original, &schema), expected);
         }
     }
 
@@ -229,7 +229,7 @@ mod tests {
     fn test_ending() {
         let schema = Schema::for_name("wikipedia");
         for (original, expected) in [("хороший", "khoroshy")] {
-            assert_eq!(parse_by_schema(&original, &schema), expected);
+            assert_eq!(parse_by_schema(original, &schema), expected);
         }
     }
 
@@ -245,7 +245,7 @@ mod tests {
                 "VELIKY"
             ),
         ] {
-            assert_eq!(parse_by_schema(&original, &schema), expected);
+            assert_eq!(parse_by_schema(original, &schema), expected);
         }
     }
 }
