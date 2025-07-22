@@ -46,29 +46,35 @@ impl Schema {
     }
 
     #[must_use]
-    pub fn get_pref(&self, s: &str) -> Option<&String> {
+    pub fn get_pref(&self, s: &str) -> Option<&str> {
         self.prev_mapping
             .as_ref()?
             .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
+            .map(String::as_str)
     }
 
     #[must_use]
-    pub fn get_next(&self, s: &str) -> Option<&String> {
+    pub fn get_next(&self, s: &str) -> Option<&str> {
         self.next_mapping
             .as_ref()?
             .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
+            .map(String::as_str)
     }
 
     #[must_use]
-    pub fn get_letter(&self, s: &str) -> Option<&String> {
+    pub fn get_letter(&self, s: &str) -> Option<&str> {
         self.mapping
             .as_ref()?
             .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
+            .map(String::as_str)
     }
 
     #[must_use]
-    pub fn get_ending(&self, s: &str) -> Option<&String> {
-        self.ending_mapping.as_ref()?.get(&s.to_lowercase())
+    pub fn get_ending(&self, s: &str) -> Option<&str> {
+        self.ending_mapping
+            .as_ref()?
+            .get(&s.to_lowercase())
+            .map(String::as_str)
     }
 }
 
@@ -80,8 +86,7 @@ impl Schema {
 ///
 #[must_use]
 pub fn parse_by_schema_name(s: &str, schema_name: &str) -> String {
-    let schema = Schema::for_name(schema_name);
-    parse_by_schema(s, &schema)
+    parse_by_schema(s, &Schema::for_name(schema_name))
 }
 
 /// Transliterate a slice of str using `Schema` to `String`
@@ -174,7 +179,7 @@ fn parse_letter(letter_with_neighbors: &[String], schema: &Schema) -> String {
 }
 
 fn propagate_case_from_source(
-    result: &String,
+    result: &str,
     source_letter: &str,
     only_first_symbol: bool,
 ) -> String {
