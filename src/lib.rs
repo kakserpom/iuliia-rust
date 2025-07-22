@@ -1,14 +1,15 @@
+#![warn(clippy::pedantic)]
 #[macro_use]
 extern crate include_dir;
 extern crate regex;
 
 use include_dir::Dir;
-use lazy_static::lazy_static;
 use regex::Regex;
 
 pub use serde::Deserialize;
 use std::collections::HashMap;
 use std::iter::once;
+use std::sync::LazyLock;
 
 const SCHEMA_DIR: Dir = include_dir!("./iuliia");
 const DUMMY_SYMBOL: &str = "$";
@@ -31,33 +32,41 @@ pub struct Schema {
 }
 
 impl Schema {
-    /// Return Schema object by schema name
-    pub fn for_name(s: &str) -> Schema {
+    /// Get a schema object by schema name
+    ///
+    /// # Panics
+    //  - If schema not found
+    #[must_use]
+    pub fn for_name(schema: &str) -> Schema {
         let schema_file = SCHEMA_DIR
-            .get_file(format!("{}{}", s, ".json"))
-            .unwrap_or_else(|| panic!("There are no schema with name {}", s));
+            .get_file(format!("{schema}.json"))
+            .unwrap_or_else(|| panic!("There are no schema with name {schema}"));
         serde_json::from_str(schema_file.contents_utf8().expect("contents_utf8() failed"))
             .expect("Schema deserialization error")
     }
 
+    #[must_use]
     pub fn get_pref(&self, s: &str) -> Option<&String> {
         self.prev_mapping
             .as_ref()?
             .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
     }
 
+    #[must_use]
     pub fn get_next(&self, s: &str) -> Option<&String> {
         self.next_mapping
             .as_ref()?
             .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
     }
 
+    #[must_use]
     pub fn get_letter(&self, s: &str) -> Option<&String> {
         self.mapping
             .as_ref()?
             .get(&s.replace(DUMMY_SYMBOL, "").to_lowercase())
     }
 
+    #[must_use]
     pub fn get_ending(&self, s: &str) -> Option<&String> {
         self.ending_mapping.as_ref()?.get(&s.to_lowercase())
     }
@@ -69,6 +78,7 @@ impl Schema {
 /// assert_eq!(iuliia_rust::parse_by_schema_name("Юлия", "wikipedia"), "Yuliya")
 /// ```
 ///
+#[must_use]
 pub fn parse_by_schema_name(s: &str, schema_name: &str) -> String {
     let schema = Schema::for_name(schema_name);
     parse_by_schema(s, &schema)
@@ -88,14 +98,14 @@ pub fn parse_by_schema_name(s: &str, schema_name: &str) -> String {
 /// ```
 ///
 pub fn parse_by_schema(s: &str, schema: &Schema) -> String {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"\b").expect("Failed to compile regex");
-    }
+    static RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"\b").expect("Failed to compile regex"));
     RE.split(s)
         .map(|word| parse_word_by_schema(word, schema))
         .collect()
 }
 
+#[must_use]
 pub fn parse_word_by_schema(s: &str, schema: &Schema) -> String {
     let word_by_letters: Vec<String> = s.chars().map(|char| char.to_string()).collect::<Vec<_>>();
     //Parse ending
@@ -169,7 +179,7 @@ fn propagate_case_from_source(
     only_first_symbol: bool,
 ) -> String {
     // Determinate case of letter
-    if !source_letter.chars().any(|letter| letter.is_uppercase()) {
+    if !source_letter.chars().any(char::is_uppercase) {
         result.to_owned()
     } else if only_first_symbol {
         let mut c = result.chars();
@@ -185,12 +195,12 @@ fn propagate_case_from_source(
 
 #[cfg(test)]
 mod tests {
-    use crate::{parse_by_schema, Schema};
+    use crate::{Schema, parse_by_schema};
 
     #[test]
     fn schema_test() {
         let schema = Schema::for_name("ala_lc");
-        assert_eq!(schema.name, "ala_lc")
+        assert_eq!(schema.name, "ala_lc");
     }
 
     #[test]
@@ -239,11 +249,9 @@ mod tests {
         for (original, expected) in [
             (
                 "Юлия, съешь ещё этих мягких французских булок из Йошкар-Олы, да выпей алтайского чаю",
-                "Yuliya, syesh yeshchyo etikh myagkikh frantsuzskikh bulok iz Yoshkar-Oly, da vypey altayskogo chayu"),
-            (
-                "ВЕЛИКИЙ",
-                "VELIKY"
+                "Yuliya, syesh yeshchyo etikh myagkikh frantsuzskikh bulok iz Yoshkar-Oly, da vypey altayskogo chayu",
             ),
+            ("ВЕЛИКИЙ", "VELIKY"),
         ] {
             assert_eq!(parse_by_schema(original, &schema), expected);
         }
